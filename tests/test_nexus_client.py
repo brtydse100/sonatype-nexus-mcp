@@ -117,6 +117,50 @@ class TestNexusClientSearch:
         assert result.continuation_token is None
 
     @respx.mock
+    async def test_search_keyword_is_sent_as_q(
+        self, nexus_credentials: NexusCredentials
+    ) -> None:
+        """Keyword searches should use Nexus's q query parameter."""
+        route = respx.get("https://nexus.example.com/service/rest/v1/search").mock(
+            return_value=Response(200, json={"items": [], "continuationToken": None})
+        )
+
+        client = NexusClient(nexus_credentials)
+        await client.search(keyword="postgres monitoring")
+
+        assert route.calls[0].request.url.params["q"] == "postgres monitoring"
+
+    @respx.mock
+    async def test_search_all_passes_keyword_through_pagination(
+        self, nexus_credentials: NexusCredentials
+    ) -> None:
+        """Keyword searches should retain q on every paginated request."""
+        page1 = make_search_response(
+            [{"id": "1", "name": "redis", "version": "7.4"}],
+            continuation_token="next",
+        )
+        page2 = make_search_response([{"id": "2", "name": "redis", "version": "7.2"}])
+        route = respx.get("https://nexus.example.com/service/rest/v1/search")
+        route.side_effect = [Response(200, json=page1), Response(200, json=page2)]
+
+        client = NexusClient(nexus_credentials)
+        results = await client.search_all(keyword="redis")
+
+        assert len(results) == 2
+        assert [call.request.url.params["q"] for call in route.calls] == ["redis", "redis"]
+        assert route.calls[1].request.url.params["continuationToken"] == "next"
+
+    @respx.mock
+    async def test_search_rejects_empty_keyword(
+        self, nexus_credentials: NexusCredentials
+    ) -> None:
+        """Blank keyword searches should fail before making a request."""
+        client = NexusClient(nexus_credentials)
+
+        with pytest.raises(ValueError, match="keyword must not be empty"):
+            await client.search(keyword=" ")
+
+    @respx.mock
     async def test_search_with_url_path(self) -> None:
         """Search should work correctly with URL containing path (e.g., /nexus)."""
         creds = NexusCredentials(

@@ -15,8 +15,10 @@ from nexus_mcp.tools.implementations import (
     get_maven_versions_impl,
     get_python_versions_impl,
     list_docker_images_impl,
+    search_docker_images_impl,
     search_maven_artifact_impl,
     search_python_package_impl,
+    search_python_packages_impl,
 )
 
 
@@ -183,6 +185,58 @@ class TestPythonTools:
         assert result["packages"][0]["name"] == "requests"
 
     @respx.mock
+    async def test_search_python_packages_uses_keyword_search(self) -> None:
+        """Keyword Python search should use PyPI format and compact results."""
+        route = respx.get("https://nexus.example.com/service/rest/v1/search").mock(
+            return_value=Response(200, json=SAMPLE_PYTHON_SEARCH_RESPONSE)
+        )
+
+        result = await search_python_packages_impl(
+            creds=make_creds(),
+            keyword="http client",
+            repository="pypi-releases",
+        )
+
+        assert result == {
+            "keyword": "http client",
+            "count": 1,
+            "results": [
+                {"name": "requests", "version": "2.28.0", "repository": "pypi-releases"}
+            ],
+        }
+        params = route.calls[0].request.url.params
+        assert params["q"] == "http client"
+        assert params["format"] == "pypi"
+        assert params["repository"] == "pypi-releases"
+
+    @respx.mock
+    async def test_search_python_packages_max_results(self) -> None:
+        """Keyword Python search should limit returned results."""
+        response = {
+            "items": [
+                {"id": str(i), "name": f"package-{i}", "version": "1.0", "repository": "pypi"}
+                for i in range(3)
+            ],
+            "continuationToken": None,
+        }
+        respx.get("https://nexus.example.com/service/rest/v1/search").mock(
+            return_value=Response(200, json=response)
+        )
+
+        result = await search_python_packages_impl(
+            creds=make_creds(), keyword="package", max_results=2
+        )
+
+        assert result["count"] == 2
+        assert len(result["results"]) == 2
+
+    async def test_search_python_packages_rejects_empty_keyword(self) -> None:
+        """Keyword Python search should reject blank keywords."""
+        result = await search_python_packages_impl(creds=make_creds(), keyword="  ")
+
+        assert result == {"error": "Invalid parameters: keyword must not be empty"}
+
+    @respx.mock
     async def test_search_python_package_normalized_name(self) -> None:
         """Search should also try normalized package names."""
         # First call returns empty, second with normalized name returns result
@@ -293,6 +347,31 @@ class TestDockerTools:
         assert result["count"] == 1
         assert result["images"][0]["name"] == "my-app"
         assert "latest" in result["images"][0]["tags"]
+
+    @respx.mock
+    async def test_search_docker_images_uses_keyword_search(self) -> None:
+        """Keyword Docker search should use Docker format and compact results."""
+        route = respx.get("https://nexus.example.com/service/rest/v1/search").mock(
+            return_value=Response(200, json=SAMPLE_DOCKER_SEARCH_RESPONSE)
+        )
+
+        result = await search_docker_images_impl(
+            creds=make_creds(),
+            keyword="postgres monitoring",
+            repository="docker-hosted",
+        )
+
+        assert result == {
+            "keyword": "postgres monitoring",
+            "count": 1,
+            "results": [
+                {"name": "my-app", "version": "latest", "repository": "docker-hosted"}
+            ],
+        }
+        params = route.calls[0].request.url.params
+        assert params["q"] == "postgres monitoring"
+        assert params["format"] == "docker"
+        assert params["repository"] == "docker-hosted"
 
     @respx.mock
     async def test_get_docker_tags_success(self) -> None:

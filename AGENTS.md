@@ -5,7 +5,7 @@ Python FastMCP 实现的 Sonatype Nexus Repository MCP 服务器。
 
 ## Current State
 - Transport: HTTP SSE (default) or Streamable-HTTP
-- Tests: 59/59 passing (17 new transport tests added)
+- Tests: 66/66 passing (17 transport tests and 7 keyword-search tests added)
 - Code Quality: mypy + ruff all passing
 - Docker: Multi-arch support (amd64 + arm64)
 
@@ -123,6 +123,18 @@ git push origin main
 - Test priority order: CLI > ENV > Default
 - Test invalid input rejection with `pytest.raises(SystemExit)`
 - Keep default behavior unchanged for backward compatibility
+
+---
+
+### Keyword Search Tools (Sep 2026) ✅ COMPLETE
+**Status**: Added compact keyword search for Docker images and Python packages.
+
+**Key Decisions**:
+1. `NexusClient.search()` maps the keyword argument to Nexus's `q` query parameter.
+2. `search_all()` forwards the keyword on every paginated request.
+3. Docker and Python keyword tools share one implementation and return only name, version,
+   and repository fields, capped by `max_results` (default 20).
+4. Blank keywords are rejected before a Nexus request is made.
 
 ---
 

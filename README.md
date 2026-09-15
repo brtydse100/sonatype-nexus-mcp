@@ -25,7 +25,7 @@ This server uses the standard Nexus REST API v1 (`/service/rest/v1`), which is a
 
 ## Available Tools
 
-This MCP server provides **6 read-only tools** for querying Nexus repositories:
+This MCP server provides **8 read-only tools** for querying Nexus repositories:
 
 ### 📦 Maven Tools
 | Tool | Description | Parameters |
@@ -36,12 +36,14 @@ This MCP server provides **6 read-only tools** for querying Nexus repositories:
 ### 🐍 Python/PyPI Tools
 | Tool | Description | Parameters |
 |------|-------------|------------|
+| `search_python_packages` | Search Nexus for Python packages using descriptive keywords | `keyword`, `repository`, `max_results` (default 20) |
 | `search_python_package` | Search for Python packages | `name`, `repository` |
 | `get_python_versions` | Get all versions of a Python package (paginated) | `package_name`, `repository`, `page_size`, `continuation_token` |
 
 ### 🐳 Docker Tools
 | Tool | Description | Parameters |
 |------|-------------|------------|
+| `search_docker_images` | Search Nexus for Docker images when the exact image name is unknown | `keyword`, `repository`, `max_results` (default 20) |
 | `list_docker_images` | List all Docker images in a repository | `repository` |
 | `get_docker_tags` | Get all tags for a Docker image | `repository`, `image_name` |
 
@@ -219,6 +221,7 @@ if response["hasMore"]:
 ### Python Tools
 | Tool | Description | Parameters |
 |------|-------------|------------|
+| `search_python_packages` | Search Nexus for Python packages using descriptive keywords | `keyword`, `repository`, `max_results` (default 20) |
 | `search_python_package` | Search Python packages | `name`, `repository` |
 | `get_python_versions` | Get versions of a package (paginated) | `package_name`, `repository`, `page_size` (default 50), `continuation_token` |
 
@@ -227,8 +230,16 @@ if response["hasMore"]:
 ### Docker Tools
 | Tool | Description | Parameters |
 |------|-------------|------------|
+| `search_docker_images` | Search Nexus for Docker images when the exact image name is unknown | `keyword`, `repository`, `max_results` (default 20) |
 | `list_docker_images` | List images in a repository | `repository` |
 | `get_docker_tags` | Get tags for an image | `repository`, `image_name` |
+
+Keyword search example:
+
+```text
+Find a Docker image related to postgres monitoring
+→ search_docker_images(keyword="postgres monitoring")
+```
 
 ## Development
 
