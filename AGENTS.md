@@ -138,4 +138,14 @@ git push origin main
 
 ---
 
+### Fork GHCR Image Publishing (Sep 2026) ✅ COMPLETE
+**Status**: Fork image is published at `ghcr.io/brtydse100/sonatype-nexus-mcp:latest`.
+
+**Key Decisions**:
+1. GitHub Actions publishes the image with `GITHUB_TOKEN` and `packages: write` permission.
+2. Compose, build scripts, and Docker documentation reference the fork's GHCR image.
+3. The published image is pulled and verified through the `/health` endpoint after each release.
+
+---
+
 **Note**: 每次实施任务后，更新本文件记录新的经验和注意事项。
