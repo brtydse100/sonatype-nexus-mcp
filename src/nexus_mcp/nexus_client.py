@@ -164,6 +164,7 @@ class NexusClient:
         name: str | None = None,
         version: str | None = None,
         continuation_token: str | None = None,
+        keyword: str | None = None,
     ) -> SearchResponse:
         """Search for components in Nexus.
 
@@ -173,17 +174,22 @@ class NexusClient:
             group: Group ID (for Maven artifacts)
             name: Artifact/package name
             version: Specific version to find
+            keyword: Descriptive keyword search query
             continuation_token: Token for pagination
 
         Returns:
             SearchResponse with matching items and optional continuation token
         """
+        if keyword is not None and not keyword.strip():
+            raise ValueError("keyword must not be empty")
+
         params = {
             "repository": repository,
             "format": format,
             "group": group,
             "name": name,
             "version": version,
+            "q": keyword,
             "continuationToken": continuation_token,
         }
 
@@ -216,6 +222,7 @@ class NexusClient:
         name: str | None = None,
         version: str | None = None,
         max_items: int = 1000,
+        keyword: str | None = None,
     ) -> list[SearchResult]:
         """Search for all matching components, handling pagination.
 
@@ -225,6 +232,7 @@ class NexusClient:
             group: Group ID (for Maven artifacts)
             name: Artifact/package name
             version: Specific version to find
+            keyword: Descriptive keyword search query
             max_items: Maximum number of items to return (safety limit)
 
         Returns:
@@ -240,6 +248,7 @@ class NexusClient:
                 group=group,
                 name=name,
                 version=version,
+                keyword=keyword,
                 continuation_token=continuation_token,
             )
 

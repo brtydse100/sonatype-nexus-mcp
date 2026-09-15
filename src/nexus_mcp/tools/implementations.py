@@ -169,6 +169,62 @@ async def get_maven_versions_impl(
 # ============================================================================
 
 
+async def _search_keyword_impl(
+    creds: NexusCredentials,
+    keyword: str,
+    format: str,
+    repository: str | None = None,
+    max_results: int = 20,
+) -> dict[str, Any]:
+    """Search one Nexus format by keywords and return compact result entries."""
+    if not keyword.strip():
+        return {"error": "Invalid parameters: keyword must not be empty"}
+    if max_results < 1:
+        return {"error": "Invalid parameters: max_results must be at least 1"}
+
+    try:
+        client = _create_client(creds)
+        results = await client.search_all(
+            keyword=keyword,
+            format=format,
+            repository=repository,
+            max_items=max_results,
+        )
+
+        return {
+            "keyword": keyword,
+            "count": len(results),
+            "results": [
+                {
+                    "name": result.name,
+                    "version": result.version,
+                    "repository": result.repository,
+                }
+                for result in results
+            ],
+        }
+    except NexusError as e:
+        return {"error": _handle_nexus_error(e)}
+    except ValueError as e:
+        return {"error": f"Invalid parameters: {e}"}
+
+
+async def search_python_packages_impl(
+    creds: NexusCredentials,
+    keyword: str,
+    repository: str | None = None,
+    max_results: int = 20,
+) -> dict[str, Any]:
+    """Search PyPI repositories for Python packages matching keywords."""
+    return await _search_keyword_impl(
+        creds=creds,
+        keyword=keyword,
+        format="pypi",
+        repository=repository,
+        max_results=max_results,
+    )
+
+
 async def search_python_package_impl(
     creds: NexusCredentials,
     name: str,
@@ -308,6 +364,22 @@ async def get_python_versions_impl(
 # ============================================================================
 # Docker Tools
 # ============================================================================
+
+
+async def search_docker_images_impl(
+    creds: NexusCredentials,
+    keyword: str,
+    repository: str | None = None,
+    max_results: int = 20,
+) -> dict[str, Any]:
+    """Search Docker repositories for images matching keywords."""
+    return await _search_keyword_impl(
+        creds=creds,
+        keyword=keyword,
+        format="docker",
+        repository=repository,
+        max_results=max_results,
+    )
 
 
 async def list_docker_images_impl(

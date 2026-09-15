@@ -18,8 +18,10 @@ from nexus_mcp.tools.implementations import (
     get_maven_versions_impl,
     get_python_versions_impl,
     list_docker_images_impl,
+    search_docker_images_impl,
     search_maven_artifact_impl,
     search_python_package_impl,
+    search_python_packages_impl,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,8 +43,10 @@ mcp = FastMCP(
     Available tools:
     - search_maven_artifact: Search for Maven artifacts by group/artifact ID
     - get_maven_versions: Get all versions of a specific Maven artifact
+    - search_python_packages: Search for Python packages using descriptive keywords
     - search_python_package: Search for Python packages
     - get_python_versions: Get all versions of a Python package
+    - search_docker_images: Search for Docker images when the exact image name is unknown
     - list_docker_images: List Docker images in a repository
     - get_docker_tags: Get tags for a specific Docker image
     """,
@@ -177,6 +181,45 @@ async def get_maven_versions(
 
 
 @mcp.tool
+async def search_python_packages(
+    keyword: Annotated[
+        str,
+        Field(
+            description="Descriptive keywords to find related Python packages (e.g., 'http client')"
+        ),
+    ],
+    repository: Annotated[
+        str | None,
+        Field(description="Repository name to search in (searches all if not specified)"),
+    ] = None,
+    max_results: Annotated[
+        int,
+        Field(
+            description="Maximum number of results to return (default 20, max 1000)",
+            ge=1,
+            le=1000,
+        ),
+    ] = 20,
+) -> dict[str, Any]:
+    """Search Nexus for Python packages using descriptive keywords.
+
+    Use this when you know what a package should do but do not know its exact
+    package name, such as finding packages related to "JSON parsing".
+    """
+    try:
+        creds = get_nexus_credentials()
+    except (MissingCredentialsError, InvalidCredentialsError) as e:
+        return {"error": f"Authentication error: {e}"}
+
+    return await search_python_packages_impl(
+        creds=creds,
+        keyword=keyword,
+        repository=repository,
+        max_results=max_results,
+    )
+
+
+@mcp.tool
 async def search_python_package(
     name: Annotated[
         str,
@@ -253,6 +296,43 @@ async def get_python_versions(
 # ============================================================================
 # Docker Tools
 # ============================================================================
+
+
+@mcp.tool
+async def search_docker_images(
+    keyword: Annotated[
+        str,
+        Field(description="Keywords for related Docker images (e.g., 'postgres monitoring')"),
+    ],
+    repository: Annotated[
+        str | None,
+        Field(description="Repository name to search in (searches all if not specified)"),
+    ] = None,
+    max_results: Annotated[
+        int,
+        Field(
+            description="Maximum number of results to return (default 20, max 1000)",
+            ge=1,
+            le=1000,
+        ),
+    ] = 20,
+) -> dict[str, Any]:
+    """Search Nexus for Docker images when the exact image name is unknown.
+
+    Use descriptive keywords, such as "postgres monitoring", to discover
+    related images across Docker repositories.
+    """
+    try:
+        creds = get_nexus_credentials()
+    except (MissingCredentialsError, InvalidCredentialsError) as e:
+        return {"error": f"Authentication error: {e}"}
+
+    return await search_docker_images_impl(
+        creds=creds,
+        keyword=keyword,
+        repository=repository,
+        max_results=max_results,
+    )
 
 
 @mcp.tool
