@@ -4,7 +4,7 @@
 set -e
 
 # Configuration
-IMAGE_NAME="${IMAGE_NAME:-addozhang/nexus-mcp-server}"
+IMAGE_NAME="${IMAGE_NAME:-ghcr.io/brtydse100/sonatype-nexus-mcp}"
 VERSION="${VERSION:-latest}"
 PYTHON_VERSION="${PYTHON_VERSION:-3.11}"
 PLATFORMS="linux/amd64,linux/arm64"

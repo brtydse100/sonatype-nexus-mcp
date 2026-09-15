@@ -22,8 +22,8 @@
 
 1. **Build multi-architecture images:**
    ```bash
-   # Set your Docker Hub username
-   export IMAGE_NAME=yourusername/nexus-mcp-server
+   # Set your registry image name (the default publishes to your fork's GHCR image)
+   export IMAGE_NAME=ghcr.io/brtydse100/sonatype-nexus-mcp
    export VERSION=1.0.0
    
    ./build-docker.sh
@@ -63,13 +63,13 @@ export VERSION=test
 ```
 
 ### `build-docker.sh`
-Builds multi-architecture images and pushes to Docker Hub:
+Builds multi-architecture images and pushes to the configured registry:
 - Supports: `linux/amd64`, `linux/arm64`
 - Pushes to registry
 - Uses Docker buildx
 
 **Environment variables:**
-- `IMAGE_NAME`: Docker image name (default: `addozhang/nexus-mcp-server`)
+- `IMAGE_NAME`: Docker image name (default: `ghcr.io/brtydse100/sonatype-nexus-mcp`)
 - `VERSION`: Image tag (default: `latest`)
 - `PYTHON_VERSION`: Python base image version (default: `3.11`)
 
@@ -91,7 +91,7 @@ export PYTHON_VERSION=3.12
 
 ### `docker-compose.yml`
 Production configuration:
-- Uses pre-built image from Docker Hub
+- Uses the pre-built image from your fork's GitHub Container Registry package
 - Exposes port 8000
 - Health checks
 - Resource limits

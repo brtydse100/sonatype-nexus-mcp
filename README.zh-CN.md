@@ -67,7 +67,7 @@ python -m nexus_mcp
 ### 使用 Docker
 ```bash
 # 快速启动
-docker run -p 8000:8000 addozhang/nexus-mcp-server:latest
+docker run -p 8000:8000 ghcr.io/brtydse100/sonatype-nexus-mcp:latest
 
 # 或使用 docker-compose
 docker-compose up
@@ -114,13 +114,13 @@ python -m nexus_mcp --host 127.0.0.1 --port 9000
 #### 使用 Docker
 ```bash
 # SSE 模式（默认）
-docker run -p 8000:8000 addozhang/nexus-mcp-server:latest
+docker run -p 8000:8000 ghcr.io/brtydse100/sonatype-nexus-mcp:latest
 
 # Streamable-HTTP 模式
-docker run -e NEXUS_MCP_TRANSPORT=streamable-http -p 8000:8000 addozhang/nexus-mcp-server:latest
+docker run -e NEXUS_MCP_TRANSPORT=streamable-http -p 8000:8000 ghcr.io/brtydse100/sonatype-nexus-mcp:latest
 
 # 自定义端口
-docker run -e NEXUS_MCP_PORT=9000 -p 9000:9000 addozhang/nexus-mcp-server:latest
+docker run -e NEXUS_MCP_PORT=9000 -p 9000:9000 ghcr.io/brtydse100/sonatype-nexus-mcp:latest
 
 # 或使用 docker-compose
 docker-compose up
