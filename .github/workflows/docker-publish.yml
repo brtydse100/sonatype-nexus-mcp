@@ -4,7 +4,14 @@ on:
   push:
     branches:
       - master
+    tags:
+      - "v*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: Optional image version tag, such as v0.2.0
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -33,6 +40,8 @@ jobs:
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha
+            type=semver,pattern={{version}}
+            type=raw,value=${{ inputs.version }},enable=${{ inputs.version != '' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6

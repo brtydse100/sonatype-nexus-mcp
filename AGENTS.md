@@ -169,6 +169,7 @@ other than PyPI and Docker.
    search tools while preserving existing tool behavior.
 3. Build both source and wheel distributions and inspect their contents before
    publishing.
+4. Publish versioned GHCR tags in addition to `latest` and commit-specific tags.
 
 ---
 
