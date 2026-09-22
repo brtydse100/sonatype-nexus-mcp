@@ -172,11 +172,13 @@ async def get_maven_versions_impl(
 async def _search_keyword_impl(
     creds: NexusCredentials,
     keyword: str,
-    format: str,
+    format: str | None,
     repository: str | None = None,
     max_results: int = 20,
+    include_format: bool = False,
+    excluded_formats: set[str] | None = None,
 ) -> dict[str, Any]:
-    """Search one Nexus format by keywords and return compact result entries."""
+    """Search Nexus by keyword and return compact result entries."""
     if not keyword.strip():
         return {"error": "Invalid parameters: keyword must not be empty"}
     if max_results < 1:
@@ -184,24 +186,36 @@ async def _search_keyword_impl(
 
     try:
         client = _create_client(creds)
+        search_limit = 1000 if excluded_formats and format is None else max_results
         results = await client.search_all(
             keyword=keyword,
             format=format,
             repository=repository,
-            max_items=max_results,
+            max_items=search_limit,
         )
+        if excluded_formats:
+            results = [
+                result
+                for result in results
+                if result.format.lower() not in excluded_formats
+            ]
+        results = results[:max_results]
+
+        formatted_results: list[dict[str, Any]] = []
+        for result in results:
+            entry: dict[str, Any] = {
+                "name": result.name,
+                "version": result.version,
+                "repository": result.repository,
+            }
+            if include_format:
+                entry["format"] = result.format
+            formatted_results.append(entry)
 
         return {
             "keyword": keyword,
             "count": len(results),
-            "results": [
-                {
-                    "name": result.name,
-                    "version": result.version,
-                    "repository": result.repository,
-                }
-                for result in results
-            ],
+            "results": formatted_results,
         }
     except NexusError as e:
         return {"error": _handle_nexus_error(e)}
@@ -222,6 +236,36 @@ async def search_python_packages_impl(
         format="pypi",
         repository=repository,
         max_results=max_results,
+    )
+
+
+async def search_other_packages_impl(
+    creds: NexusCredentials,
+    keyword: str,
+    format: str | None = None,
+    repository: str | None = None,
+    max_results: int = 20,
+) -> dict[str, Any]:
+    """Search non-PyPI and non-Docker Nexus packages by keyword.
+
+    When ``format`` is omitted, search all Nexus formats and exclude the
+    formats covered by the dedicated Python and Docker tools. When supplied,
+    it can be any other Nexus format such as npm, nuget, raw, or helm.
+    """
+    if format is not None and format.lower() in {"pypi", "docker"}:
+        return {
+            "error": "Invalid parameters: format must not be pypi or docker; "
+            "use the dedicated Python or Docker search tool"
+        }
+
+    return await _search_keyword_impl(
+        creds=creds,
+        keyword=keyword,
+        format=format,
+        repository=repository,
+        max_results=max_results,
+        include_format=True,
+        excluded_formats={"pypi", "docker"} if format is None else None,
     )
 
 

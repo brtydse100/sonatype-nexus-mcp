@@ -5,7 +5,7 @@ Python FastMCP 实现的 Sonatype Nexus Repository MCP 服务器。
 
 ## Current State
 - Transport: HTTP SSE (default) or Streamable-HTTP
-- Tests: 66/66 passing (17 transport tests and 7 keyword-search tests added)
+- Tests: 69/69 passing (17 transport tests and 10 keyword-search tests added)
 - Code Quality: mypy + ruff all passing
 - Docker: Multi-arch support (amd64 + arm64)
 
@@ -136,6 +136,17 @@ git push origin main
    and repository fields, capped by `max_results` (default 20).
 4. Blank keywords are rejected before a Nexus request is made.
 
+### Other Package Keyword Search (Sep 2026) ✅ COMPLETE
+**Status**: Added `search_other_packages` for keyword discovery across Nexus formats
+other than PyPI and Docker.
+
+**Key Decisions**:
+1. The tool accepts an optional Nexus `format` filter for formats such as npm, NuGet,
+   Raw, RubyGems, Helm, Go, and Maven.
+2. When no format is provided, the Nexus search runs across formats and filters out
+   PyPI and Docker results, which have dedicated tools.
+3. Results include the package format so models can distinguish heterogeneous results.
+
 ---
 
 ### Fork GHCR Image Publishing (Sep 2026) ✅ COMPLETE
@@ -145,6 +156,19 @@ git push origin main
 1. GitHub Actions publishes the image with `GITHUB_TOKEN` and `packages: write` permission.
 2. Compose, build scripts, and Docker documentation reference the fork's GHCR image.
 3. The published image is pulled and verified through the `/health` endpoint after each release.
+
+---
+
+### Release 0.2.0 Packaging (Sep 2026) ✅ COMPLETE
+**Status**: Release notes and package metadata updated for version 0.2.0.
+
+**Key Decisions**:
+1. Keep `pyproject.toml`, the package `__version__`, health response, and
+   `server.json` versions synchronized.
+2. Use a minor version bump because the release adds transports and package
+   search tools while preserving existing tool behavior.
+3. Build both source and wheel distributions and inspect their contents before
+   publishing.
 
 ---
 

@@ -20,6 +20,7 @@ from nexus_mcp.tools.implementations import (
     list_docker_images_impl,
     search_docker_images_impl,
     search_maven_artifact_impl,
+    search_other_packages_impl,
     search_python_package_impl,
     search_python_packages_impl,
 )
@@ -32,8 +33,8 @@ mcp = FastMCP(
     instructions="""
     Nexus MCP Server - Query Sonatype Nexus Repository Manager.
 
-    This server provides tools to search and query Maven, Python (PyPI), and Docker
-    repositories hosted in Nexus Repository Manager.
+    This server provides tools to search and query packages hosted in Nexus
+    Repository Manager, including Maven, Python (PyPI), Docker, and other formats.
 
     Authentication is handled via HTTP headers:
     - X-Nexus-Url: The base URL of your Nexus instance
@@ -43,6 +44,7 @@ mcp = FastMCP(
     Available tools:
     - search_maven_artifact: Search for Maven artifacts by group/artifact ID
     - get_maven_versions: Get all versions of a specific Maven artifact
+    - search_other_packages: Search non-PyPI/Docker packages by keyword
     - search_python_packages: Search for Python packages using descriptive keywords
     - search_python_package: Search for Python packages
     - get_python_versions: Get all versions of a Python package
@@ -64,7 +66,7 @@ async def health_check(request: Request) -> JSONResponse:
     return JSONResponse({
         "status": "healthy",
         "service": "nexus-mcp",
-        "version": "0.1.0",
+        "version": "0.2.0",
     })
 
 
@@ -290,6 +292,65 @@ async def get_python_versions(
         repository=repository,
         page_size=page_size,
         continuation_token=continuation_token,
+    )
+
+
+# ============================================================================
+# Other Package Formats
+# ============================================================================
+
+
+@mcp.tool
+async def search_other_packages(
+    keyword: Annotated[
+        str,
+        Field(
+            description=(
+                "Keywords for packages in Nexus formats other than Python or Docker "
+                "(e.g., 'frontend build tools')"
+            )
+        ),
+    ],
+    format: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Optional Nexus format filter, such as 'npm', 'nuget', 'raw', "
+                "'rubygems', or 'helm'; omit to search all other formats"
+            )
+        ),
+    ] = None,
+    repository: Annotated[
+        str | None,
+        Field(description="Repository name to search in (searches all if not specified)"),
+    ] = None,
+    max_results: Annotated[
+        int,
+        Field(
+            description="Maximum number of results to return (default 20, max 1000)",
+            ge=1,
+            le=1000,
+        ),
+    ] = 20,
+) -> dict[str, Any]:
+    """Search Nexus packages other than Python and Docker by descriptive keyword.
+
+    Use this for package formats such as npm, NuGet, RubyGems, Helm, Go,
+    Composer, Conan, Raw, or Maven. Set ``format`` when the package type is
+    known; otherwise the search covers all other formats and includes each
+    result's format.
+    """
+    try:
+        creds = get_nexus_credentials()
+    except (MissingCredentialsError, InvalidCredentialsError) as e:
+        return {"error": f"Authentication error: {e}"}
+
+    return await search_other_packages_impl(
+        creds=creds,
+        keyword=keyword,
+        format=format,
+        repository=repository,
+        max_results=max_results,
     )
 
 
