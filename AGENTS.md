@@ -170,6 +170,8 @@ other than PyPI and Docker.
 3. Build both source and wheel distributions and inspect their contents before
    publishing.
 4. Publish versioned GHCR tags in addition to `latest` and commit-specific tags.
+5. Configure QEMU and Buildx with explicit `linux/amd64,linux/arm64` platforms;
+   otherwise GitHub Actions publishes only the runner's amd64 image.
 
 ---
 
