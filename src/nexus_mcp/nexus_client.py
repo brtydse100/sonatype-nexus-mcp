@@ -59,7 +59,7 @@ class SearchResult(BaseModel):
     group: str | None = Field(default=None, description="Group ID (Maven)")
     name: str = Field(default="", description="Artifact/package name")
     version: str = Field(default="", description="Version string")
-    format: str = Field(default="", description="Package format (maven2, pypi, docker)")
+    format: str = Field(default="", description="Nexus package format, such as maven2, npm, or pypi")
     assets: list[dict[str, Any]] = Field(default_factory=list, description="Asset details")
 
 
@@ -170,7 +170,7 @@ class NexusClient:
 
         Args:
             repository: Repository name to search in
-            format: Package format (maven2, pypi, docker)
+            format: Optional Nexus package format filter (for example, maven2, npm, or pypi)
             group: Group ID (for Maven artifacts)
             name: Artifact/package name
             version: Specific version to find
@@ -228,7 +228,7 @@ class NexusClient:
 
         Args:
             repository: Repository name to search in
-            format: Package format (maven2, pypi, docker)
+            format: Optional Nexus package format filter (for example, maven2, npm, or pypi)
             group: Group ID (for Maven artifacts)
             name: Artifact/package name
             version: Specific version to find

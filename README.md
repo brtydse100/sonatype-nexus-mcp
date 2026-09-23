@@ -25,7 +25,7 @@ This server uses the standard Nexus REST API v1 (`/service/rest/v1`), which is a
 
 ## Available Tools
 
-This MCP server provides **8 read-only tools** for querying Nexus repositories:
+This MCP server provides **9 read-only tools** for querying Nexus repositories:
 
 ### 📦 Maven Tools
 | Tool | Description | Parameters |
@@ -39,6 +39,15 @@ This MCP server provides **8 read-only tools** for querying Nexus repositories:
 | `search_python_packages` | Search Nexus for Python packages using descriptive keywords | `keyword`, `repository`, `max_results` (default 20) |
 | `search_python_package` | Search for Python packages | `name`, `repository` |
 | `get_python_versions` | Get all versions of a Python package (paginated) | `package_name`, `repository`, `page_size`, `continuation_token` |
+
+### Other Package Formats
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `search_other_packages` | Search non-PyPI/Docker packages by descriptive keywords | `keyword`, `format` (optional), `repository`, `max_results` (default 20) |
+
+Use `format` to narrow the search to a Nexus format such as `npm`, `nuget`, `raw`,
+`rubygems`, or `helm`. If omitted, the tool searches all formats except PyPI and
+Docker and includes the format in each result.
 
 ### 🐳 Docker Tools
 | Tool | Description | Parameters |
@@ -201,7 +210,7 @@ For other MCP clients that support HTTP transport:
 | Tool | Description | Parameters |
 |------|-------------|------------|
 | `search_maven_artifact` | Search Maven repositories | `group_id`, `artifact_id`, `version`, `repository` |
-| `get_maven_versions` | Get versions of an artifact (paginated) | `group_id`, `artifact_id`, `repository`, `page_size` (default 50), `continuation_token` |
+| `get_maven_versions` | Get versions of an artifact (paginated) | `group_id`, `artifact_id`, `repository`, `page_size` (default 20), `continuation_token` |
 
 **Pagination example:**
 ```python
@@ -223,7 +232,7 @@ if response["hasMore"]:
 |------|-------------|------------|
 | `search_python_packages` | Search Nexus for Python packages using descriptive keywords | `keyword`, `repository`, `max_results` (default 20) |
 | `search_python_package` | Search Python packages | `name`, `repository` |
-| `get_python_versions` | Get versions of a package (paginated) | `package_name`, `repository`, `page_size` (default 50), `continuation_token` |
+| `get_python_versions` | Get versions of a package (paginated) | `package_name`, `repository`, `page_size` (default 20), `continuation_token` |
 
 **Pagination:** Same pattern as Maven - check `hasMore` and use `continuationToken` for subsequent pages.
 
@@ -233,6 +242,18 @@ if response["hasMore"]:
 | `search_docker_images` | Search Nexus for Docker images when the exact image name is unknown | `keyword`, `repository`, `max_results` (default 20) |
 | `list_docker_images` | List images in a repository | `repository` |
 | `get_docker_tags` | Get tags for an image | `repository`, `image_name` |
+
+### Other Package Formats
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `search_other_packages` | Search non-PyPI/Docker packages by descriptive keywords | `keyword`, `format` (optional), `repository`, `max_results` (default 20) |
+
+Example:
+
+```text
+Find npm packages related to frontend build tools
+→ search_other_packages(keyword="frontend build tools", format="npm")
+```
 
 Keyword search example:
 

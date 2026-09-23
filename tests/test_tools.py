@@ -17,6 +17,7 @@ from nexus_mcp.tools.implementations import (
     list_docker_images_impl,
     search_docker_images_impl,
     search_maven_artifact_impl,
+    search_other_packages_impl,
     search_python_package_impl,
     search_python_packages_impl,
 )
@@ -325,6 +326,97 @@ class TestPythonTools:
         )
 
         assert result2["hasMore"] is False
+
+
+class TestOtherPackageTools:
+    """Tests for keyword searches across non-PyPI/Docker formats."""
+
+    @respx.mock
+    async def test_search_other_packages_with_format(self) -> None:
+        """Keyword searches should pass the selected Nexus format through."""
+        response = {
+            "items": [
+                {
+                    "id": "npm-1",
+                    "repository": "npm-proxy",
+                    "format": "npm",
+                    "name": "webpack",
+                    "version": "5.91.0",
+                }
+            ],
+            "continuationToken": None,
+        }
+        route = respx.get("https://nexus.example.com/service/rest/v1/search").mock(
+            return_value=Response(200, json=response)
+        )
+
+        result = await search_other_packages_impl(
+            creds=make_creds(),
+            keyword="frontend build tools",
+            format="npm",
+            repository="npm-proxy",
+        )
+
+        assert result == {
+            "keyword": "frontend build tools",
+            "count": 1,
+            "results": [
+                {
+                    "name": "webpack",
+                    "version": "5.91.0",
+                    "repository": "npm-proxy",
+                    "format": "npm",
+                }
+            ],
+        }
+        params = route.calls[0].request.url.params
+        assert params["q"] == "frontend build tools"
+        assert params["format"] == "npm"
+        assert params["repository"] == "npm-proxy"
+
+    @respx.mock
+    async def test_search_other_packages_excludes_python_and_docker(self) -> None:
+        """Broad searches should leave Python and Docker to their dedicated tools."""
+        response = {
+            "items": [
+                {"id": "1", "format": "pypi", "name": "requests", "version": "2.0"},
+                {"id": "2", "format": "docker", "name": "nginx", "version": "latest"},
+                {"id": "3", "format": "nuget", "name": "Newtonsoft.Json", "version": "13.0"},
+            ],
+            "continuationToken": None,
+        }
+        route = respx.get("https://nexus.example.com/service/rest/v1/search").mock(
+            return_value=Response(200, json=response)
+        )
+
+        result = await search_other_packages_impl(
+            creds=make_creds(), keyword="json"
+        )
+
+        assert result["count"] == 1
+        assert result["results"] == [
+            {
+                "name": "Newtonsoft.Json",
+                "version": "13.0",
+                "repository": "",
+                "format": "nuget",
+            }
+        ]
+        params = route.calls[0].request.url.params
+        assert "format" not in params
+
+    async def test_search_other_packages_rejects_dedicated_format(self) -> None:
+        """The general tool should direct Python/Docker searches to dedicated tools."""
+        result = await search_other_packages_impl(
+            creds=make_creds(), keyword="package", format="docker"
+        )
+
+        assert result == {
+            "error": (
+                "Invalid parameters: format must not be pypi or docker; "
+                "use the dedicated Python or Docker search tool"
+            )
+        }
 
 
 class TestDockerTools:
